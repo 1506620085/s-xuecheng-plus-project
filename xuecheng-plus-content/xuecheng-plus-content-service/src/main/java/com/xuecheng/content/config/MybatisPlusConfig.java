@@ -8,10 +8,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @author Mr.M
+ * @author Hangz
  * @version 1.0
  * @description TODO
- * @date 2023/2/12 9:23
+ * @date 2024/10/12 9:23
  */
 @Configuration
 @MapperScan("com.xuecheng.content.mapper")
