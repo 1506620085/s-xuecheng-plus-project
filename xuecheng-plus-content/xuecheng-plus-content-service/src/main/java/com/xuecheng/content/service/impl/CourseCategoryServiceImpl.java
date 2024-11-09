@@ -42,15 +42,14 @@ public class CourseCategoryServiceImpl implements CourseCategoryService {
             }
             //找到节点的父节点
             CourseCategoryTreeDto courseCategoryParent = mapTemp.get(item.getParentid());
-            if(courseCategoryParent!=null){
-                if(courseCategoryParent.getChildrenTreeNodes()==null){
+            if (courseCategoryParent != null) {
+                if (courseCategoryParent.getChildrenTreeNodes() == null) {
                     //如果该父节点的ChildrenTreeNodes属性为空要new一个集合，因为要向该集合中放它的子节点
                     courseCategoryParent.setChildrenTreeNodes(new ArrayList<CourseCategoryTreeDto>());
                 }
                 //到每个节点的子节点放在父节点的childrenTreeNodes属性中
                 courseCategoryParent.getChildrenTreeNodes().add(item);
             }
-
 
 
         });

@@ -11,10 +11,10 @@ import java.util.List;
  * @date 2024/10/12 14:49
  */
 public interface CourseCategoryService {
- /**
-  * 课程分类树形结构查询
-  *
-  * @return
-  */
- public List<CourseCategoryTreeDto> queryTreeNodes(String id);
+    /**
+     * 课程分类树形结构查询
+     *
+     * @return
+     */
+    public List<CourseCategoryTreeDto> queryTreeNodes(String id);
 }
