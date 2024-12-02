@@ -14,14 +14,12 @@
            <artifactId>xuecheng-plus-content-model</artifactId>
            <version>0.0.1-SNAPSHOT</version>
        </dependency>
-
        <!-- MySQL 驱动 -->
        <dependency>
            <groupId>mysql</groupId>
            <artifactId>mysql-connector-java</artifactId>
            <scope>runtime</scope>
        </dependency>
-
        <!-- mybatis plus的依赖 -->
        <dependency>
            <groupId>com.baomidou</groupId>
@@ -48,12 +46,18 @@
                </exclusion>
            </exclusions>
        </dependency>
-
        <!-- Spring Boot 集成 log4j2 -->
        <dependency>
            <groupId>org.springframework.boot</groupId>
            <artifactId>spring-boot-starter-log4j2</artifactId>
        </dependency>
+       <dependency>
+           <groupId>com.alibaba.cloud</groupId>
+           <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>com.alibaba.cloud</groupId>
+           <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+       </dependency>
    </dependencies>
-
 </project>

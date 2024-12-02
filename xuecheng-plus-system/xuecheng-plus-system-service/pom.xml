@@ -7,6 +7,7 @@
         <groupId>com.xuecheng</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
+
     <artifactId>xuecheng-plus-system-service</artifactId>
     <name>xuecheng-plus-system-service</name>
     <description>xuecheng-plus-system-service</description>
@@ -17,7 +18,6 @@
             <artifactId>xuecheng-plus-system-model</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-
         <!-- MySQL 驱动 -->
         <dependency>
             <groupId>mysql</groupId>
@@ -47,14 +47,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <!-- Spring Boot 集成 log4j2 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
-
-
     </dependencies>
-
 </project>
