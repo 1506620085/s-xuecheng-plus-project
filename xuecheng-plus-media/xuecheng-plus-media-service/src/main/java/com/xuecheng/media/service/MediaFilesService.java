@@ -1,6 +1,7 @@
 package com.xuecheng.media.service;
 
 import com.xuecheng.media.model.dto.UploadFileParamsDto;
+import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -11,6 +12,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface MediaFilesService extends IService<MediaFiles> {
 
-    UploadFileParamsDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath);
+    UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath);
 
+
+    MediaFiles addMediaFileToDb(UploadFileParamsDto uploadFileParamsDto, String fileMd5, Long companyId, String bucketFiles, String objectName);
 }

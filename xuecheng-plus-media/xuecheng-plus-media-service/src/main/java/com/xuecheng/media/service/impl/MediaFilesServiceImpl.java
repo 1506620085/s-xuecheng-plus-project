@@ -6,12 +6,15 @@ import com.j256.simplemagic.ContentInfoUtil;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.media.mapper.MediaFilesMapper;
 import com.xuecheng.media.model.dto.UploadFileParamsDto;
+import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.service.MediaFilesService;
 import io.minio.MinioClient;
+import io.minio.RemoveObjectArgs;
 import io.minio.UploadObjectArgs;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -47,11 +50,63 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
     @Resource
     private MediaFilesMapper mediaFilesMapper;
 
+    @Resource
+    MediaFilesService currentProxy;
 
     @Override
-    public UploadFileParamsDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
+    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
+        File file = new File(localFilePath);
+        if (!file.exists()) {
+            XueChengPlusException.cast("文件不存在");
+        }
+        //文件名称
+        String filename = uploadFileParamsDto.getFilename();
+        //文件扩展名
+        String extension = filename.substring(filename.lastIndexOf("."));
+        // 文件 mimeType
+        String mimeType = getMimeType(extension);
+        // 文件 MD5 值
+        String fileMd5 = getFileMd5(file);
+        //文件的默认目录
+        String defaultFolderPath = getDefaultFolderPath();
+        //存储到minio中的对象名(带目录)
+        String objectName = defaultFolderPath + "/" + filename;
+        // 判断文件是否上传成功
+        boolean uploadSuccess = false;
+        try {
+            uploadSuccess = addMediaFilesToMinIO(localFilePath, bucketFiles, objectName, mimeType);
+            //文件大小
+            uploadFileParamsDto.setFileSize(file.length());
+            MediaFiles mediaFiles = currentProxy.addMediaFileToDb(uploadFileParamsDto, fileMd5, companyId, bucketFiles, objectName);
+            //准备返回数据
+            UploadFileResultDto uploadFileResultDto = new UploadFileResultDto();
+            BeanUtils.copyProperties(mediaFiles, uploadFileResultDto);
+            return uploadFileResultDto;
+        } catch (Exception e) {
+            // 如果数据库保存失败，删除 MinIO 中的文件
+            if (uploadSuccess) {
+                try {
+                    removeMediaFilesFromMinIO(bucketFiles, objectName);
+                } catch (Exception deleteException) {
+                    log.error("删除 MinIO 文件失败: {}, {}", bucketFiles, objectName, deleteException);
+                }
+            }
+            XueChengPlusException.cast("上传文件过程出现错误，上传失败"); // 抛出原始异常
+            return null;
+        }
+    }
 
-        return null;
+    private void removeMediaFilesFromMinIO(String bucket, String objectName) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .build());
+            log.debug("删除上传至 minio 中的文件成功, bucket:{}, objectName:{}", bucket, objectName);
+        }catch (Exception e) {
+            XueChengPlusException.cast("删除失败");
+        }
     }
 
 
@@ -83,6 +138,16 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
     }
 
 
+    /**
+     * 将文件信息添加到文件表
+     *
+     * @param uploadFileParamsDto
+     * @param fileMd5
+     * @param companyId
+     * @param bucket
+     * @param objectName
+     * @return
+     */
     @Transactional
     public MediaFiles addMediaFileToDb(UploadFileParamsDto uploadFileParamsDto, String fileMd5, Long companyId, String bucket, String objectName) {
         MediaFiles mediaFiles = mediaFilesMapper.selectById(fileMd5);
@@ -90,8 +155,24 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             XueChengPlusException.cast("文件系统已拥有该文件");
             return mediaFiles;
         }
-        // todo 保存到数据库
-        return null;
+        // 初始化 MediaFiles 对象
+        mediaFiles = new MediaFiles();
+        // 保存到数据库
+        BeanUtils.copyProperties(uploadFileParamsDto, mediaFiles);
+        mediaFiles.setId(fileMd5);
+        mediaFiles.setCompanyId(companyId);
+        mediaFiles.setFileId(fileMd5);
+        mediaFiles.setUrl("/" + bucket + "/" + objectName);
+        mediaFiles.setFilePath(objectName);
+        mediaFiles.setBucket(bucket);
+        mediaFiles.setAuditStatus("002003");
+        mediaFiles.setStatus("1");
+        int insert = mediaFilesMapper.insert(mediaFiles);
+        if (insert < 0) {
+            log.debug("保存文件信息到数据库成功,{}", mediaFiles.toString());
+            XueChengPlusException.cast("保存文件信息失败");
+        }
+        return mediaFiles;
     }
 
     /**

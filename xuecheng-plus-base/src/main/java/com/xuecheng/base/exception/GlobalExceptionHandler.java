@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * @author Hangz
@@ -23,15 +24,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(XueChengPlusException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public RestErrorResponse customException(XueChengPlusException e) {
-
         //记录异常
         log.error("系统异常{}", e.getErrMessage(), e);
         //..
-
         //解析出异常信息
         String errMessage = e.getErrMessage();
-        RestErrorResponse restErrorResponse = new RestErrorResponse(errMessage);
-        return restErrorResponse;
+        return new RestErrorResponse(errMessage);
     }
 
 
@@ -39,14 +37,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public RestErrorResponse exception(Exception e) {
-
         //记录异常
         log.error("系统异常{}", e.getMessage(), e);
-
         //解析出异常信息
-        RestErrorResponse restErrorResponse = new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());
-        return restErrorResponse;
+        return new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public RestErrorResponse handleMaxSizeException(MaxUploadSizeExceededException e) {
+        //记录异常
+        log.error("系统异常{}", e.getMessage(), e);
+        //解析出异常信息
+        return new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());
+    }
 
 }
