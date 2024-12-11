@@ -104,7 +104,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
                             .object(objectName)
                             .build());
             log.debug("删除上传至 minio 中的文件成功, bucket:{}, objectName:{}", bucket, objectName);
-        }catch (Exception e) {
+        } catch (Exception e) {
             XueChengPlusException.cast("删除失败");
         }
     }
