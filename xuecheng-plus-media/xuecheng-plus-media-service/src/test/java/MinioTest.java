@@ -2,12 +2,16 @@ import com.xuecheng.base.exception.XueChengPlusException;
 import io.minio.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Formatter;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,7 +83,7 @@ public class MinioTest {
 
     //清除分块文件
     @Test
-    public void test_removeObjects() throws Exception{
+    public void test_removeObjects() throws Exception {
         MinioClient minioClient =
                 MinioClient.builder()
                         .endpoint("http://127.0.0.1:9000")
@@ -95,4 +99,5 @@ public class MinioTest {
                     "Error in deleting object " + error.objectName() + "; " + error.message());
         }
     }
+
 }

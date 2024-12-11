@@ -9,9 +9,7 @@ import com.xuecheng.media.model.dto.UploadFileParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.service.MediaFilesService;
-import io.minio.MinioClient;
-import io.minio.RemoveObjectArgs;
-import io.minio.UploadObjectArgs;
+import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.BeanUtils;
@@ -23,8 +21,14 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Formatter;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Hang
@@ -173,6 +177,181 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             XueChengPlusException.cast("保存文件信息失败");
         }
         return mediaFiles;
+    }
+
+    /**
+     * @param fileMd5 文件的md5
+     * @return com.xuecheng.base.model.RestResponse<java.lang.Boolean> false不存在，true存在
+     * @description 检查文件是否存在
+     * @author Hangz
+     */
+    @Override
+    public Boolean checkFile(String fileMd5) {
+        MediaFiles mediaFiles = mediaFilesMapper.selectById(fileMd5);
+        if (mediaFiles != null) {
+            // 桶
+            String bucket = mediaFiles.getBucket();
+            // 存储目录
+            String filePath = mediaFiles.getFilePath();
+            try {
+                GetObjectResponse object = minioClient.getObject(
+                        GetObjectArgs.builder()
+                                .bucket(bucket)
+                                .object(filePath)
+                                .build()
+                );
+                if (object != null) {
+                    return true;
+                }
+            } catch (Exception e) {
+                XueChengPlusException.cast(e.toString());
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param fileMd5    文件的md5
+     * @param chunkIndex 分块序号
+     * @return com.xuecheng.base.model.RestResponse<java.lang.Boolean> false不存在，true存在
+     * @description 检查分块是否存在
+     * @author Hangz
+     */
+    @Override
+    public Boolean checkChunk(String fileMd5, int chunkIndex) {
+        //得到分块文件目录
+        String chunkFileFolderPath = getChunkFileFolderPath(fileMd5);
+        try {
+            GetObjectResponse object = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketVideoFiles)
+                            .object(chunkFileFolderPath + chunkIndex)
+                            .build()
+            );
+            return object != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 获取分块文件目录
+     *
+     * @param fileMd5
+     * @return
+     */
+    private String getChunkFileFolderPath(String fileMd5) {
+        return fileMd5.substring(0, 1) + "/" + fileMd5.substring(1, 2) + "/" + fileMd5 + "/" + "chunk" + "/";
+    }
+
+    /**
+     * @param filePath
+     * @param fileMd5  文件md5
+     * @param chunk    分块序号
+     * @return com.xuecheng.base.model.RestResponse
+     * @description 上传分块
+     * @author Hangz
+     */
+    @Override
+    public Boolean uploadChunk(String filePath, String fileMd5, int chunk) {
+        //分块文件的路径
+        String chunkFileFolderPath = getChunkFileFolderPath(fileMd5) + chunk;
+        //获取mimeType
+        String mimeType = getMimeType(null);
+        return addMediaFilesToMinIO(filePath, bucketVideoFiles, chunkFileFolderPath, mimeType);
+    }
+
+    /**
+     * @param companyId           机构id
+     * @param fileMd5             文件md5
+     * @param chunkTotal          分块总和
+     * @param uploadFileParamsDto 文件信息
+     * @return com.xuecheng.base.model.RestResponse
+     * @description 合并分块
+     * @author Hangz
+     */
+    @Override
+    public Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileParamsDto uploadFileParamsDto) {
+        //分块文件的路径
+        String chunkFileFolderPath = getChunkFileFolderPath(fileMd5);
+        // 合并分块
+        List<ComposeSource> sourceObjectList = Stream.iterate(0, i -> ++i).limit(chunkTotal).map(i ->
+                ComposeSource.builder()
+                        .bucket(bucketVideoFiles)
+                        .object(chunkFileFolderPath + String.valueOf(i))
+                        .build()
+        ).collect(Collectors.toList());
+        //文件名称
+        String fileName = uploadFileParamsDto.getFilename();
+        //文件扩展名
+        String extName = fileName.substring(fileName.lastIndexOf("."));
+        //合并文件路径
+        String mergeFilePath = getFilePathByMd5(fileMd5, extName);
+        try {
+            minioClient.composeObject(
+                    ComposeObjectArgs.builder()
+                            .bucket(bucketVideoFiles)
+                            .object(mergeFilePath)
+                            .sources(sourceObjectList)
+                            .build());
+            log.debug("合并文件成功:{}", mergeFilePath);
+        } catch (Exception e) {
+            log.debug("合并文件失败,fileMd5:{},异常:{}", fileMd5, e.getMessage(), e);
+            XueChengPlusException.cast(e.toString());
+        }
+
+        String mergeFileMd5 = null;
+        try {
+            // 获取文件输入流
+            InputStream fileStream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketVideoFiles)
+                            .object(mergeFilePath)
+                            .build()
+            );
+            // 计算文件 MD5
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = fileStream.read(buffer)) != -1) {
+                md.update(buffer, 0, bytesRead);
+            }
+            fileStream.close();
+            // 转换 MD5 为字符串
+            mergeFileMd5 = byteToHex(md.digest());
+            log.debug("获取文件 MD5 成功:{}", mergeFileMd5);
+        } catch (Exception e) {
+            log.debug("获取文件状态失败,fileMd5:{},异常:{}", fileMd5, e.getMessage(), e);
+            XueChengPlusException.cast(e.toString());
+        }
+        // 验证文件 md5
+        if (!fileMd5.equals(mergeFileMd5)){
+            System.out.println("false");
+        }
+        // TODO 获取文件大小
+        // TODO 上传数据库
+        return null;
+    }
+
+    private static String byteToHex(byte[] bytes) {
+        Formatter formatter = new Formatter();
+        for (byte b : bytes) {
+            formatter.format("%02x", b);
+        }
+        String result = formatter.toString();
+        formatter.close();
+        return result;
+    }
+
+    /**
+     * 得到合并后的文件的地址
+     *
+     * @param fileMd5 文件id即md5值
+     * @param fileExt 文件扩展名
+     * @return
+     */
+    private String getFilePathByMd5(String fileMd5, String fileExt) {
+        return fileMd5.substring(0, 1) + "/" + fileMd5.substring(1, 2) + "/" + fileMd5 + "/" + fileMd5 + fileExt;
     }
 
     /**
