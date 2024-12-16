@@ -10,6 +10,8 @@ import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.service.MediaFilesService;
 import io.minio.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.BeanUtils;
@@ -278,7 +280,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
         List<ComposeSource> sourceObjectList = Stream.iterate(0, i -> ++i).limit(chunkTotal).map(i ->
                 ComposeSource.builder()
                         .bucket(bucketVideoFiles)
-                        .object(chunkFileFolderPath + String.valueOf(i))
+                        .object(chunkFileFolderPath + i)
                         .build()
         ).collect(Collectors.toList());
         //文件名称
@@ -301,7 +303,17 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
         }
 
         String mergeFileMd5 = null;
+        long fileSize = 0;
         try {
+            // 获取文件信息
+            StatObjectResponse stat = minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucketVideoFiles)
+                            .object(mergeFilePath)
+                            .build()
+            );
+            fileSize = stat.size(); // 获取文件大小
+
             // 获取文件输入流
             InputStream fileStream = minioClient.getObject(
                     GetObjectArgs.builder()
@@ -309,6 +321,9 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
                             .object(mergeFilePath)
                             .build()
             );
+            log.debug("获取文件大小成功:{}", fileSize);
+            uploadFileParamsDto.setFileSize(fileSize);
+
             // 计算文件 MD5
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] buffer = new byte[8192];
@@ -325,14 +340,52 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             XueChengPlusException.cast(e.toString());
         }
         // 验证文件 md5
-        if (!fileMd5.equals(mergeFileMd5)){
-            System.out.println("false");
+        if (!fileMd5.equals(mergeFileMd5)) {
+            XueChengPlusException.cast("文件合并校验失败");
         }
-        // TODO 获取文件大小
-        // TODO 上传数据库
-        return null;
+        // 上传数据库
+        currentProxy.addMediaFileToDb(uploadFileParamsDto, fileMd5, companyId, bucketVideoFiles, mergeFilePath);
+        // 清除分块文件
+        clearChunkFiles(chunkFileFolderPath, chunkTotal);
+        return true;
     }
 
+    /**
+     * 清除分块文件
+     *
+     * @param chunkFileFolderPath 分块文件路径
+     * @param chunkTotal          分块文件总数
+     */
+    private void clearChunkFiles(String chunkFileFolderPath, int chunkTotal) {
+        try {
+            List<DeleteObject> deleteObjects = Stream.iterate(0, i -> ++i)
+                    .limit(chunkTotal)
+                    .map(i -> new DeleteObject(chunkFileFolderPath.concat(Integer.toString(i))))
+                    .collect(Collectors.toList());
+
+            RemoveObjectsArgs removeObjectsArgs = RemoveObjectsArgs.builder().bucket(bucketVideoFiles).objects(deleteObjects).build();
+            Iterable<Result<DeleteError>> results = minioClient.removeObjects(removeObjectsArgs);
+            results.forEach(r -> {
+                DeleteError deleteError = null;
+                try {
+                    deleteError = r.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("清楚分块文件失败,objectname:{}", deleteError.objectName(), e);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("清楚分块文件失败,chunkFileFolderPath:{}", chunkFileFolderPath, e);
+        }
+    }
+
+    /**
+     * 将字节数组转换为十六进制字符串表示形式
+     *
+     * @param bytes
+     * @return
+     */
     private static String byteToHex(byte[] bytes) {
         Formatter formatter = new Formatter();
         for (byte b : bytes) {
