@@ -1,28 +1,24 @@
 package com.xuecheng.content.model.po;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.io.Serializable;
+import java.util.Date;
 import lombok.Data;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
 /**
- * <p>
- *
- * </p>
- *
- * @author itcast
+ * 
+ * @TableName teachplan_media
  */
+@TableName(value ="teachplan_media")
 @Data
-@TableName("teachplan_media")
 public class TeachplanMedia implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
     /**
      * 主键
      */
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -43,11 +39,12 @@ public class TeachplanMedia implements Serializable {
     /**
      * 媒资文件原始名称
      */
-    @TableField("media_fileName")
     private String mediaFilename;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createDate;
+    /**
+     * 
+     */
+    private Date createDate;
 
     /**
      * 创建人
@@ -59,5 +56,6 @@ public class TeachplanMedia implements Serializable {
      */
     private String changePeople;
 
-
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }
