@@ -5,6 +5,8 @@ import com.xuecheng.media.model.dto.UploadFileParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 
+import java.io.File;
+
 /**
  * @author Hang
  * @description 针对表【media_files(媒资信息)】的数据库操作Service
@@ -65,5 +67,23 @@ public interface MediaFilesService extends IService<MediaFiles> {
      */
     Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileParamsDto uploadFileParamsDto);
 
+    /**
+     * 从minio下载文件
+     *
+     * @param bucket     桶
+     * @param objectName 对象名称
+     * @return 下载后的文件
+     */
+    File downloadFileFromMinIO(String bucket, String objectName);
 
+    /**
+     * 将文件写入minIO
+     *
+     * @param localFilePath
+     * @param bucket
+     * @param objectName
+     * @param mimeType
+     * @return
+     */
+    public boolean addMediaFilesToMinIO(String localFilePath, String bucket, String objectName, String mimeType);
 }

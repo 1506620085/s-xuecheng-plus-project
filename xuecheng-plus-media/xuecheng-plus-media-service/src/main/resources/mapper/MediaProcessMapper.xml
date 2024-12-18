@@ -11,6 +11,7 @@
             <result property="bucket" column="bucket" jdbcType="VARCHAR"/>
             <result property="filePath" column="file_path" jdbcType="VARCHAR"/>
             <result property="status" column="status" jdbcType="VARCHAR"/>
+            <result property="failCount" column="fail_count" jdbcType="BIGINT"/>
             <result property="createDate" column="create_date" jdbcType="TIMESTAMP"/>
             <result property="finishDate" column="finish_date" jdbcType="TIMESTAMP"/>
             <result property="url" column="url" jdbcType="VARCHAR"/>
@@ -18,7 +19,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,file_id,filename,
+        id,file_id,filename,fail_count,
         bucket,file_path,status,
         create_date,finish_date,url,
         errormsg

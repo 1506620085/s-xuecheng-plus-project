@@ -83,4 +83,12 @@ public class BigFileTest {
             System.out.println("文件合并成功");
         }
     }
+
+    @Test
+    public void getMd5() throws IOException {
+        File sourceFile = new File("D:\\a_Programming_Tools\\c_Code\\c_Back_End\\c_Study_Area\\s-xuecheng-workplace\\ffmpeg\\xxl.avi");
+        FileInputStream sourceFileInputStream = new FileInputStream(sourceFile);
+        String sourceFileInputStreamMd5 = DigestUtils.md5Hex(sourceFileInputStream);
+        System.out.println(sourceFileInputStreamMd5);
+    }
 }

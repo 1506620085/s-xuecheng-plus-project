@@ -108,6 +108,7 @@ public class MediaProcessServiceImpl extends ServiceImpl<MediaProcessMapper, Med
         //添加到历史记录
         MediaProcessHistory mediaProcessHistory = new MediaProcessHistory();
         BeanUtils.copyProperties(mediaProcess, mediaProcessHistory);
+        mediaProcessHistory.setCreateDate(LocalDateTime.now());
         mediaProcessHistoryMapper.insert(mediaProcessHistory);
         //删除mediaProcess
         mediaProcessMapper.deleteById(mediaProcess.getId());
