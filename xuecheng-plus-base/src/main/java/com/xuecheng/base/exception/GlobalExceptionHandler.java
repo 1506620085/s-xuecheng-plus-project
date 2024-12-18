@@ -1,11 +1,10 @@
 package com.xuecheng.base.exception;
 
+import com.xuecheng.base.model.BaseResponse;
+import com.xuecheng.base.model.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
@@ -15,40 +14,37 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
  * @date 2024/10/12 17:01
  */
 @Slf4j
-@ControllerAdvice
-//@RestControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     //对项目的自定义异常类型进行处理
-    @ResponseBody
-    @ExceptionHandler(XueChengPlusException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public RestErrorResponse customException(XueChengPlusException e) {
+    @ExceptionHandler(BusinessException.class)
+    /* @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+     * // 在异常捕获类中使用这个注解时，它的作用是告诉 Spring，当这个异常被抛出时，
+     * // HTTP 响应应返回指定的状态码,用于简化和规范异常处理逻辑，
+     * // 特别适合在 RESTful 风格的 API 中使用，提升代码的可维护性和一致性
+     */
+    public BaseResponse<?> businessExceptionHandler(BusinessException e) {
         //记录异常
-        log.error("系统异常{}", e.getErrMessage(), e);
-        //..
-        //解析出异常信息
-        String errMessage = e.getErrMessage();
-        return new RestErrorResponse(errMessage);
+        log.error("BusinessException: {}", e.getMessage(), e);
+        return ResultUtils.error(e.getCode(), e.getMessage());
     }
 
 
-    @ResponseBody
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public RestErrorResponse exception(Exception e) {
+    @ExceptionHandler(RuntimeException.class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public BaseResponse<?> exception(RuntimeException e) {
         //记录异常
-        log.error("系统异常{}", e.getMessage(), e);
-        //解析出异常信息
-        return new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());
+        log.error("RuntimeException: {}", e.getMessage(), e);
+        return ResultUtils.error(ErrorCode.UNKOWN_ERROR);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public RestErrorResponse handleMaxSizeException(MaxUploadSizeExceededException e) {
+    public BaseResponse<?> handleMaxSizeException(MaxUploadSizeExceededException e) {
         //记录异常
-        log.error("系统异常{}", e.getMessage(), e);
+        log.error("MaxUploadSizeExceededException: {}", e.getMessage(), e);
         //解析出异常信息
-        return new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());
+        return ResultUtils.error(ErrorCode.FILE_MAX);
     }
 
 }
