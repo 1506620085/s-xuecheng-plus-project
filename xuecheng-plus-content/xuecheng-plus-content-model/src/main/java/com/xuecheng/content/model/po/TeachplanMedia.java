@@ -4,15 +4,15 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
 /**
- * 
  * @TableName teachplan_media
  */
-@TableName(value ="teachplan_media")
+@TableName(value = "teachplan_media")
 @Data
 public class TeachplanMedia implements Serializable {
     /**
@@ -42,9 +42,9 @@ public class TeachplanMedia implements Serializable {
     private String mediaFilename;
 
     /**
-     * 
+     *
      */
-    private Date createDate;
+    private LocalDateTime createDate;
 
     /**
      * 创建人
