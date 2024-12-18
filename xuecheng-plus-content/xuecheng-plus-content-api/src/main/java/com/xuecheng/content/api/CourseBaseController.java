@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Api(value = "课程信息管理接口", tags = "课程信息管理接口")
 @RestController
-public class CourseBaseInfoController {
+public class CourseBaseController {
 
     @Autowired
     CourseBaseService courseBaseService;
@@ -36,8 +36,6 @@ public class CourseBaseInfoController {
         Page<CourseBase> courseBasePage = courseBaseService.page(new Page<>(current, size),
                 courseBaseService.getQueryWrapper(courseBaseQueryRequest));
         return ResultUtils.success(courseBasePage);
-
-
     }
 
     @ApiOperation("新增课程")
@@ -46,7 +44,5 @@ public class CourseBaseInfoController {
         //获取到用户所属机构的id
         Long companyId = 1232141425L;
         return ResultUtils.success(courseBaseService.addCourseBase(companyId, courseBaseAddRequest));
-
     }
-
 }
