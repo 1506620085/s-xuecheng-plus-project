@@ -20,7 +20,7 @@
     </sql>
 
     <select id="selectTreeNodes" parameterType="string"
-            resultType="com.xuecheng.content.model.dto.CourseCategoryTreeDto">
+            resultType="com.xuecheng.content.model.vo.CourseCategoryTreeVO">
         with recursive t1 as (select *
                               from course_category
                               where id = #{id}

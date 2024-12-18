@@ -1,4 +1,4 @@
-package com.xuecheng.content.model.dto;
+package com.xuecheng.content.model.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @ApiModel(value = "BindTeachplanMediaDto", description = "教学计划-媒资绑定提交数据")
-public class BindTeachplanMediaDto {
+public class BindTeachplanMediaVO {
 
     @ApiModelProperty(value = "媒资文件id", required = true)
     private String mediaId;

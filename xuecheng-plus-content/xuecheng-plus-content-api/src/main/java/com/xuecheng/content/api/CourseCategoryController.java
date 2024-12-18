@@ -1,6 +1,8 @@
 package com.xuecheng.content.api;
 
-import com.xuecheng.content.model.dto.CourseCategoryTreeDto;
+import com.xuecheng.base.model.BaseResponse;
+import com.xuecheng.base.model.ResultUtils;
+import com.xuecheng.content.model.vo.CourseCategoryTreeVO;
 import com.xuecheng.content.service.CourseCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +23,9 @@ public class CourseCategoryController {
     CourseCategoryService courseCategoryService;
 
     @GetMapping("/course-category/tree-nodes")
-    public List<CourseCategoryTreeDto> queryTreeNodes() {
-        return courseCategoryService.queryTreeNodes("1");
+    public BaseResponse<List<CourseCategoryTreeVO>> queryTreeNodes() {
+        return ResultUtils.success(courseCategoryService.queryTreeNodes("1"));
     }
-
 
 
 }

@@ -1,7 +1,5 @@
 package com.xuecheng.content.model.dto.courseBase;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.xuecheng.base.model.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
