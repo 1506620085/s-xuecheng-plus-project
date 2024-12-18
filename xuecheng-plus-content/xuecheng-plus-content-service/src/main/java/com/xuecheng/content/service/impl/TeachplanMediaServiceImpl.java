@@ -2,7 +2,7 @@ package com.xuecheng.content.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.xuecheng.base.exception.XueChengPlusException;
+import com.xuecheng.base.exception.BusinessException;
 import com.xuecheng.content.mapper.TeachplanMapper;
 import com.xuecheng.content.mapper.TeachplanMediaMapper;
 import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
@@ -29,18 +29,18 @@ public class TeachplanMediaServiceImpl extends ServiceImpl<TeachplanMediaMapper,
     @Override
     public TeachplanMedia  associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto) {
         if (bindTeachplanMediaDto == null) {
-            XueChengPlusException.cast("传入参数为空");
+            BusinessException.cast("传入参数为空");
         }
         String mediaId = bindTeachplanMediaDto.getMediaId();
         String fileName = bindTeachplanMediaDto.getFileName();
         Long teachplanId = bindTeachplanMediaDto.getTeachplanId();
         Teachplan teachplan = teachplanMapper.selectById(teachplanId);
         if (teachplan == null) {
-            XueChengPlusException.cast("教学计划不存在");
+            BusinessException.cast("教学计划不存在");
         }
         Integer grade = teachplan.getGrade();
         if (grade != 2) {
-            XueChengPlusException.cast("只允许第二级教学计划绑定媒资文件");
+            BusinessException.cast("只允许第二级教学计划绑定媒资文件");
         }
         //课程id
         Long courseId = teachplan.getCourseId();

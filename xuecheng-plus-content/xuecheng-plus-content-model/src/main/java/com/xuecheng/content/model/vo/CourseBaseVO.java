@@ -1,4 +1,4 @@
-package com.xuecheng.content.model.dto;
+package com.xuecheng.content.model.vo;
 
 import com.xuecheng.content.model.po.CourseBase;
 import lombok.Data;
@@ -7,10 +7,9 @@ import lombok.Data;
  * @author Hangz
  * @version 1.0
  * @description 课程基本信息dto
- * @date 2022/9/7 17:44
  */
 @Data
-public class CourseBaseInfoDto extends CourseBase {
+public class CourseBaseVO extends CourseBase {
 
 
     /**
@@ -22,7 +21,6 @@ public class CourseBaseInfoDto extends CourseBase {
      * 价格
      */
     private Float price;
-
 
     /**
      * 原价

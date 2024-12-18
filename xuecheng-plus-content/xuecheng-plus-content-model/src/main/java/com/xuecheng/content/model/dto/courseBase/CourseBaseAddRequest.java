@@ -1,4 +1,4 @@
-package com.xuecheng.content.model.dto;
+package com.xuecheng.content.model.dto.courseBase;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -7,15 +7,9 @@ import lombok.Data;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
-/**
- * @author Hangz
- * @version 1.0
- * @description 添加课程dto
- * @date 2022/9/7 17:40
- */
 @Data
-@ApiModel(value = "AddCourseDto", description = "新增课程基本信息")
-public class AddCourseDto {
+@ApiModel(value = "CourseBaseAddRequest", description = "新增课程基本信息")
+public class CourseBaseAddRequest {
 
     @NotEmpty(message = "课程名称不能为空")
     @ApiModelProperty(value = "课程名称", required = true)
