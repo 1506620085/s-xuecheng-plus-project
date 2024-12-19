@@ -18,7 +18,7 @@ public enum ErrorCode {
     NOT_LOGIN_ERROR(40100, "未登录"),
     NO_AUTH_ERROR(40101, "无权限"),
     FILE_MAX(402001,"上传文件大小超过限制"),
-
+    UPLOAD_FILE_ERROR(402002,"文件上传过程错误"),
     NOT_FOUND_ERROR(40400, "请求数据不存在"),
     FORBIDDEN_ERROR(40300, "禁止访问"),
     SYSTEM_ERROR(50000, "系统内部异常"),
