@@ -1,6 +1,7 @@
 package com.xuecheng.media.service.jobhandler;
 
-import com.xuecheng.base.exception.XueChengPlusException;
+import com.xuecheng.base.exception.BusinessException;
+import com.xuecheng.base.exception.ErrorCode;
 import com.xuecheng.base.utils.Mp4VideoUtil;
 import com.xuecheng.media.model.po.MediaProcess;
 import com.xuecheng.media.service.MediaFilesService;
@@ -53,8 +54,8 @@ public class VideoTask {
                 return;
             }
         } catch (Exception e) {
-            log.error(e.toString());
-            XueChengPlusException.cast(e.toString());
+            log.error("处理视频任务失败");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
         // 启动 size 个线程的线程池
         ExecutorService executorService = Executors.newFixedThreadPool(size);
@@ -102,12 +103,12 @@ public class VideoTask {
                         //开始视频转换，成功将返回 success
                         result = mp4VideoUtil.generateMp4();
                         if (!result.equals("success")) {
-                            XueChengPlusException.cast("处理视频失败,视频地址:{" + bucket + filePath + "},错误信息:{" + result + "}");
+                            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "处理视频失败,视频地址:{" + bucket + filePath + "},错误信息:{" + result + "}");
                         }
                     } catch (Exception e) {
                         log.error("处理视频文件:{},出错:{}", mediaProcess.getFilePath(), e.getMessage());
                         mediaProcessService.saveProcessFinishStatus(taskId, "3", fileId, null, result);
-                        XueChengPlusException.cast(e.getMessage());
+                        throw new BusinessException(ErrorCode.UNKOWN_ERROR, "处理视频失败,视频地址:{" + bucket + filePath + "},错误信息:{" + result + "}");
                     }
                     //将mp4上传至minio
                     //mp4在minio的存储路径

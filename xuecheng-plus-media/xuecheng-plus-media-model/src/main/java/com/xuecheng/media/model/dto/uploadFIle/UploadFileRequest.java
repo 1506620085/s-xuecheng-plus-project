@@ -1,4 +1,4 @@
-package com.xuecheng.media.model.dto;
+package com.xuecheng.media.model.dto.uploadFIle;
 
 import lombok.Data;
 
@@ -6,7 +6,7 @@ import lombok.Data;
  * 上传普通文件请求参数
  */
 @Data
-public class UploadFileParamsDto {
+public class UploadFileRequest {
 
     /**
      * 文件名称

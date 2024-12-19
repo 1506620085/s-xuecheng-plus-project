@@ -1,7 +1,7 @@
 package com.xuecheng.media.api;
 
-import com.xuecheng.media.model.dto.UploadFileParamsDto;
-import com.xuecheng.media.model.dto.UploadFileResultDto;
+import com.xuecheng.media.model.dto.uploadFIle.UploadFileRequest;
+import com.xuecheng.media.model.vo.UploadFileVO;
 import com.xuecheng.media.service.MediaFilesService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -34,9 +34,9 @@ public class MediaController {
      */
     @ApiOperation("上传图片接口")
     @PostMapping(value = "/upload/coursefile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public UploadFileResultDto uploadFile(@RequestPart("filedata") MultipartFile filedata) throws IOException {
+    public UploadFileVO uploadFile(@RequestPart("filedata") MultipartFile filedata) throws IOException {
         //准备上传文件的信息
-        UploadFileParamsDto uploadFileParamsDto = new UploadFileParamsDto();
+        UploadFileRequest uploadFileParamsDto = new UploadFileRequest();
         //原始文件名称
         uploadFileParamsDto.setFilename(filedata.getOriginalFilename());
         //文件大小
@@ -50,7 +50,7 @@ public class MediaController {
         //文件路径
         String localFilePath = tempFile.getAbsolutePath();
         //调用service上传图片
-        UploadFileResultDto uploadFileResultDto = mediaFilesService.uploadFile(companyId, uploadFileParamsDto, localFilePath);
+        UploadFileVO uploadFileResultDto = mediaFilesService.uploadFile(companyId, uploadFileParamsDto, localFilePath);
         // 上传完成删除临时文件
         boolean delete = tempFile.delete();
         if (!delete) {

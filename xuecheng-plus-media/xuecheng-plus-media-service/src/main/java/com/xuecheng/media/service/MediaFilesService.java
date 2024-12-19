@@ -1,8 +1,8 @@
 package com.xuecheng.media.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.xuecheng.media.model.dto.UploadFileParamsDto;
-import com.xuecheng.media.model.dto.UploadFileResultDto;
+import com.xuecheng.media.model.dto.uploadFIle.UploadFileRequest;
+import com.xuecheng.media.model.vo.UploadFileVO;
 import com.xuecheng.media.model.po.MediaFiles;
 
 import java.io.File;
@@ -14,7 +14,7 @@ import java.io.File;
  */
 public interface MediaFilesService extends IService<MediaFiles> {
 
-    UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath);
+    UploadFileVO uploadFile(Long companyId, UploadFileRequest uploadFileParamsDto, String localFilePath);
 
     /**
      * 将文件信息添加到文件表
@@ -26,7 +26,7 @@ public interface MediaFilesService extends IService<MediaFiles> {
      * @param objectName
      * @return
      */
-    MediaFiles addMediaFileToDb(UploadFileParamsDto uploadFileParamsDto, String fileMd5, Long companyId, String bucketFiles, String objectName);
+    MediaFiles addMediaFileToDb(UploadFileRequest uploadFileParamsDto, String fileMd5, Long companyId, String bucketFiles, String objectName);
 
 
     /**
@@ -65,7 +65,7 @@ public interface MediaFilesService extends IService<MediaFiles> {
      * @description 合并分块
      * @author Hangz
      */
-    Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileParamsDto uploadFileParamsDto);
+    Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileRequest uploadFileParamsDto);
 
     /**
      * 从minio下载文件

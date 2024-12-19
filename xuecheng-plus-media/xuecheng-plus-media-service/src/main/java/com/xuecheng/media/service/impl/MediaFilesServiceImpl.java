@@ -3,13 +3,14 @@ package com.xuecheng.media.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.j256.simplemagic.ContentInfo;
 import com.j256.simplemagic.ContentInfoUtil;
-import com.xuecheng.base.exception.XueChengPlusException;
+import com.xuecheng.base.exception.BusinessException;
+import com.xuecheng.base.exception.ErrorCode;
 import com.xuecheng.media.mapper.MediaFilesMapper;
 import com.xuecheng.media.mapper.MediaProcessMapper;
-import com.xuecheng.media.model.dto.UploadFileParamsDto;
-import com.xuecheng.media.model.dto.UploadFileResultDto;
+import com.xuecheng.media.model.dto.uploadFIle.UploadFileRequest;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.model.po.MediaProcess;
+import com.xuecheng.media.model.vo.UploadFileVO;
 import com.xuecheng.media.service.MediaFilesService;
 import io.minio.*;
 import io.minio.messages.DeleteError;
@@ -64,10 +65,10 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
     MediaFilesService currentProxy;
 
     @Override
-    public UploadFileResultDto uploadFile(Long companyId, UploadFileParamsDto uploadFileParamsDto, String localFilePath) {
+    public UploadFileVO uploadFile(Long companyId, UploadFileRequest uploadFileParamsDto, String localFilePath) {
         File file = new File(localFilePath);
         if (!file.exists()) {
-            XueChengPlusException.cast("文件不存在");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件不存在");
         }
         //文件名称
         String filename = uploadFileParamsDto.getFilename();
@@ -89,7 +90,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             uploadFileParamsDto.setFileSize(file.length());
             MediaFiles mediaFiles = currentProxy.addMediaFileToDb(uploadFileParamsDto, fileMd5, companyId, bucketFiles, objectName);
             //准备返回数据
-            UploadFileResultDto uploadFileResultDto = new UploadFileResultDto();
+            UploadFileVO uploadFileResultDto = new UploadFileVO();
             BeanUtils.copyProperties(mediaFiles, uploadFileResultDto);
             return uploadFileResultDto;
         } catch (Exception e) {
@@ -101,8 +102,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
                     log.error("删除 MinIO 文件失败: {}, {}", bucketFiles, objectName, deleteException);
                 }
             }
-            XueChengPlusException.cast("上传文件过程出现错误，上传失败"); // 抛出原始异常
-            return null;
+            throw new BusinessException(ErrorCode.UPLOAD_FILE_ERROR, "上传文件过程出现错误，上传失败"); // 抛出原始异常
         }
     }
 
@@ -115,7 +115,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
                             .build());
             log.debug("删除上传至 minio 中的文件成功, bucket:{}, objectName:{}", bucket, objectName);
         } catch (Exception e) {
-            XueChengPlusException.cast("删除失败");
+            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "删除失败");
         }
     }
 
@@ -143,8 +143,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             return true;
         } catch (Exception e) {
             log.error("上传文件到minio出错,bucket:{},objectName:{},错误原因:{}", bucket, objectName, e.getMessage(), e);
-            XueChengPlusException.cast("上传文件到文件系统失败");
-            return false;
+            throw new BusinessException(ErrorCode.UPLOAD_FILE_ERROR, "上传文件到文件系统失败");
         }
     }
 
@@ -160,11 +159,10 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
      * @return
      */
     @Transactional
-    public MediaFiles addMediaFileToDb(UploadFileParamsDto uploadFileParamsDto, String fileMd5, Long companyId, String bucket, String objectName) {
+    public MediaFiles addMediaFileToDb(UploadFileRequest uploadFileParamsDto, String fileMd5, Long companyId, String bucket, String objectName) {
         MediaFiles mediaFiles = mediaFilesMapper.selectById(fileMd5);
         if (mediaFiles != null) {
-            XueChengPlusException.cast("文件系统已拥有该文件");
-            return mediaFiles;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件系统已拥有该文件");
         }
         // 初始化 MediaFiles 对象
         mediaFiles = new MediaFiles();
@@ -180,8 +178,8 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
         mediaFiles.setStatus("1");
         int insert = mediaFilesMapper.insert(mediaFiles);
         if (insert < 0) {
-            log.debug("保存文件信息到数据库成功,{}", mediaFiles.toString());
-            XueChengPlusException.cast("保存文件信息失败");
+            log.debug("保存文件信息到数据库失败,{}", mediaFiles.toString());
+            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "保存文件信息失败");
         }
         //添加到待处理任务表
         addWaitingTask(mediaFiles);
@@ -234,7 +232,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
                     return true;
                 }
             } catch (Exception e) {
-                XueChengPlusException.cast(e.toString());
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR);
             }
         }
         return false;
@@ -301,7 +299,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
      * @author Hangz
      */
     @Override
-    public Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileParamsDto uploadFileParamsDto) {
+    public Boolean mergeFile(Long companyId, String fileMd5, int chunkTotal, UploadFileRequest uploadFileParamsDto) {
         //分块文件的路径
         String chunkFileFolderPath = getChunkFileFolderPath(fileMd5);
         // 合并分块
@@ -327,7 +325,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             log.debug("合并文件成功:{}", mergeFilePath);
         } catch (Exception e) {
             log.debug("合并文件失败,fileMd5:{},异常:{}", fileMd5, e.getMessage(), e);
-            XueChengPlusException.cast(e.toString());
+            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "合并文件失败");
         }
 
         String mergeFileMd5 = null;
@@ -365,11 +363,11 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
             log.debug("获取文件 MD5 成功:{}", mergeFileMd5);
         } catch (Exception e) {
             log.debug("获取文件状态失败,fileMd5:{},异常:{}", fileMd5, e.getMessage(), e);
-            XueChengPlusException.cast(e.toString());
+            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "获取文件状态失败");
         }
         // 验证文件 md5
         if (!fileMd5.equals(mergeFileMd5)) {
-            XueChengPlusException.cast("文件合并校验失败");
+            throw new BusinessException(ErrorCode.UNKOWN_ERROR, "文件合并校验失败");
         }
         // 上传数据库
         currentProxy.addMediaFileToDb(uploadFileParamsDto, fileMd5, companyId, bucketVideoFiles, mergeFilePath);
@@ -495,7 +493,7 @@ public class MediaFilesServiceImpl extends ServiceImpl<MediaFilesMapper, MediaFi
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
             return DigestUtils.md5Hex(fileInputStream);
         } catch (Exception e) {
-            throw new XueChengPlusException(e.toString());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
     }
 
